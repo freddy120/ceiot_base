@@ -41,9 +41,11 @@ app.use('/js', express.static('spa'));
 
 const PORT = 8080;
 
-app.post('/measurement', function (req, res) {
--       console.log("device id    : " + req.body.id + " key         : " + req.body.key + " temperature : " + req.body.t + " humidity    : " + req.body.h);	
-    const {insertedId} = insertMeasurement({id:req.body.id, t:req.body.t, h:req.body.h});
+app.post('/measurement', function (req, res) {       
+    
+    //console.log(req)
+    console.log("device id    : " + req.body.id + " key         : " + req.body.key + " temperature : " + req.body.t + " humidity  : " + req.body.h + " Pressure : " +  req.body.p);	
+    const {insertedId} = insertMeasurement({id:req.body.id, t:req.body.t, h:req.body.h, p: req.body.p});
 	res.send("received measurement into " +  insertedId);
 });
 
@@ -177,15 +179,16 @@ app.get('/admin/:command', function(req,res) {
 
 
 startDatabase().then(async() => {
-    await insertMeasurement({id:'00', t:'18', h:'78'});
-    await insertMeasurement({id:'00', t:'19', h:'77'});
-    await insertMeasurement({id:'00', t:'17', h:'77'});
-    await insertMeasurement({id:'01', t:'17', h:'77'});
+    await insertMeasurement({id:'00', t:'18', h:'78', p: '0'});
+    await insertMeasurement({id:'00', t:'19', h:'77', p: '0'});
+    await insertMeasurement({id:'00', t:'17', h:'77', p: '0'});
+    await insertMeasurement({id:'01', t:'17', h:'77', p: '0'});
     console.log("mongo measurement database Up");
 
     db.public.none("CREATE TABLE devices (device_id VARCHAR, name VARCHAR, key VARCHAR)");
     db.public.none("INSERT INTO devices VALUES ('00', 'Fake Device 00', '123456')");
     db.public.none("INSERT INTO devices VALUES ('01', 'Fake Device 01', '234567')");
+    db.public.none("INSERT INTO devices VALUES ('14', 'ESP32-bmp280', '$&,.123')");
     db.public.none("CREATE TABLE users (user_id VARCHAR, name VARCHAR, key VARCHAR)");
     db.public.none("INSERT INTO users VALUES ('1','Ana','admin123')");
     db.public.none("INSERT INTO users VALUES ('2','Beto','user123')");
