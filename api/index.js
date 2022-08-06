@@ -58,6 +58,7 @@ async function getMeasurements() {
 const app = express();
 
 app.use(bodyParser.urlencoded({extended:false}));
+app.use(bodyParser.json())
 
 app.use(express.static('spa'));
 app.use('/js', express.static('spa'));
@@ -67,6 +68,15 @@ const PORT = 8080;
 app.post('/measurement', function (req, res) {       
     
     //console.log(req)
+    console.log("device id    : " + req.body.id + " key         : " + req.body.key + " temperature : " + req.body.t + " humidity  : " + req.body.h + " Pressure : " +  req.body.p);	
+    const {insertedId} = insertMeasurement({id:req.body.id, t:req.body.t, h:req.body.h, p: req.body.p});
+	res.send("received measurement into " +  insertedId);
+});
+
+
+app.post('/measurement/json', function (req, res) {       
+    
+    //console.log(req.body)
     console.log("device id    : " + req.body.id + " key         : " + req.body.key + " temperature : " + req.body.t + " humidity  : " + req.body.h + " Pressure : " +  req.body.p);	
     const {insertedId} = insertMeasurement({id:req.body.id, t:req.body.t, h:req.body.h, p: req.body.p});
 	res.send("received measurement into " +  insertedId);

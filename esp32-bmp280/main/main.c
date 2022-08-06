@@ -28,11 +28,13 @@
 
 /* HTTP Constants that aren't configurable in menuconfig */
 #define WEB_PATH "/measurement"
+#define WEB_PATH_JSON "/measurement/json"
 
 static const char *TAG = "temp_collector";
 
 //static char *BODY = "id="DEVICE_ID"&t=%0.2f&h=%0.2f&p=%0.2f";
 static char *BODY = "id=%02d:%02d:%02d:%02d:%02d:%02d&t=%0.2f&h=%0.2f&p=%0.2f";
+static char *BODY_JSON = "{\"id\":\"%02d:%02d:%02d:%02d:%02d:%02d\",\"t\":\"%0.2f\",\"h\":\"%0.2f\",\"p\":\"%0.2f\"}";
 
 static char *REQUEST_POST = "POST "WEB_PATH" HTTP/1.0\r\n"
     "Host: "API_IP_PORT"\r\n"
@@ -42,6 +44,14 @@ static char *REQUEST_POST = "POST "WEB_PATH" HTTP/1.0\r\n"
     "\r\n"
     "%s";
 
+static char *REQUEST_POST_JSON = "POST "WEB_PATH_JSON" HTTP/1.0\r\n"
+    "Host: "API_IP_PORT"\r\n"
+    "User-Agent: "USER_AGENT"\r\n"
+    "Content-Type: application/json\r\n"
+    "Content-Length: %d\r\n"
+    "\r\n"
+    "%s";
+    
 static void http_get_task(void *pvParameters)
 {
     const struct addrinfo hints = {
@@ -51,7 +61,7 @@ static void http_get_task(void *pvParameters)
     struct addrinfo *res;
     struct in_addr *addr;
     int s, r;
-    char body[128];
+    char body[256];
     char recv_buf[64];
 
     char send_buf[512];
@@ -87,8 +97,8 @@ static void http_get_task(void *pvParameters)
             ESP_LOGI(TAG, "Pressure: %.2f Pa, Temperature: %.2f C", pressure, temperature);
 //            if (bme280p) {
                 ESP_LOGI(TAG,", Humidity: %.2f\n", humidity);
-                sprintf(body, BODY, base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], base_mac_addr[3], base_mac_addr[4], base_mac_addr[5], temperature , humidity, pressure);
-                sprintf(send_buf, REQUEST_POST, (int)strlen(body),body );
+                sprintf(body, BODY_JSON, base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], base_mac_addr[3], base_mac_addr[4], base_mac_addr[5], temperature , humidity, pressure);
+                sprintf(send_buf, REQUEST_POST_JSON, (int)strlen(body),body );
 //	    } else {
 //                sprintf(send_buf, REQUEST_POST, temperature , 0);
 //            }
