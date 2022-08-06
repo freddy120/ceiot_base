@@ -15,6 +15,7 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "esp_mac.h"
 #include "protocol_examples_common.h"
 
 #include "lwip/err.h"
@@ -30,7 +31,8 @@
 
 static const char *TAG = "temp_collector";
 
-static char *BODY = "id="DEVICE_ID"&t=%0.2f&h=%0.2f&p=%0.2f";
+//static char *BODY = "id="DEVICE_ID"&t=%0.2f&h=%0.2f&p=%0.2f";
+static char *BODY = "id=%02d:%02d:%02d:%02d:%02d:%02d&t=%0.2f&h=%0.2f&p=%0.2f";
 
 static char *REQUEST_POST = "POST "WEB_PATH" HTTP/1.0\r\n"
     "Host: "API_IP_PORT"\r\n"
@@ -49,10 +51,10 @@ static void http_get_task(void *pvParameters)
     struct addrinfo *res;
     struct in_addr *addr;
     int s, r;
-    char body[64];
+    char body[128];
     char recv_buf[64];
 
-    char send_buf[256];
+    char send_buf[512];
 
     bmp280_params_t params;
     bmp280_init_default_params(&params);
@@ -67,15 +69,25 @@ static void http_get_task(void *pvParameters)
 
     float pressure, temperature, humidity;
 
+    uint8_t base_mac_addr[6] = {0};
+    esp_err_t ret = ESP_OK;
+
+    ret = esp_efuse_mac_get_default(base_mac_addr);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get base MAC address from EFUSE BLK0. (%s)", esp_err_to_name(ret));
+    }
 
     while(1) {
         if (bmp280_read_float(&dev, &temperature, &pressure, &humidity) != ESP_OK) {
             ESP_LOGI(TAG, "Temperature/pressure reading failed\n");
         } else {
+            ESP_LOGI(TAG, "Using \"0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\" as base MAC address", 
+                base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], base_mac_addr[3], base_mac_addr[4], base_mac_addr[5]);
+
             ESP_LOGI(TAG, "Pressure: %.2f Pa, Temperature: %.2f C", pressure, temperature);
 //            if (bme280p) {
                 ESP_LOGI(TAG,", Humidity: %.2f\n", humidity);
-                sprintf(body, BODY, temperature , humidity, pressure);
+                sprintf(body, BODY, base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], base_mac_addr[3], base_mac_addr[4], base_mac_addr[5], temperature , humidity, pressure);
                 sprintf(send_buf, REQUEST_POST, (int)strlen(body),body );
 //	    } else {
 //                sprintf(send_buf, REQUEST_POST, temperature , 0);
